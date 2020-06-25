@@ -142,7 +142,7 @@ namespace Trexia.Events
                                 Description = "There is no scheduled Maintenance!",
                             };
 
-                            embedS.WithFooter("Created by Ayresia#2327 | Trexia A1.0");
+                            embed.WithFooter($"Trexia A1.0 | Updated on {currentTime} {currentTimeZone}");
 
                             await message.ModifyAsync(m =>
                             {
