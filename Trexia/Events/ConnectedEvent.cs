@@ -1,10 +1,7 @@
-﻿using Discord;
-using Discord.WebSocket;
-using System;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
 
-namespace Valorant_BOT.Events
+namespace Trexia.Events
 {
     class ConnectedEvent
     {

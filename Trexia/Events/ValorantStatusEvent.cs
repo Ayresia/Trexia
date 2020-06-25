@@ -6,8 +6,9 @@ using Discord;
 using System.Collections.Generic;
 using System.Linq;
 using Discord.Rest;
+using TimeZoneNames;
 
-namespace Valorant_BOT.Events
+namespace Trexia.Events
 {
     class ValorantStatusEvent
     {
@@ -15,18 +16,17 @@ namespace Valorant_BOT.Events
         {
             SocketTextChannel client = null;
             String currentJson;
-            int indexcout = 0;
+            int indexCounter = 0;
             ulong guildID = Convert.ToUInt64(Startup._configuration["guild_id"]);
             ulong channelID = Convert.ToUInt64(Startup._configuration["channel_id"]);
 
             List<RestUserMessage> messageIDs = new List<RestUserMessage>();
-
             try
             {
                 client = _client.GetGuild(guildID).GetTextChannel(channelID);
             } catch (NullReferenceException)
             {
-                Console.WriteLine("[ERROR] You have invalid guild/channel id in `config.json`");
+                Console.WriteLine("[ERROR] You have a invalid Guild/Channel ID in 'config.json'.");
                 Environment.Exit(1);
             }
 
@@ -34,6 +34,12 @@ namespace Valorant_BOT.Events
 
             while (true)
             {
+                currentJson = webClient.DownloadString("https://riotstatus.vercel.app/valorant");
+                var jsonParsed = ValorantEvent.FromJson(currentJson);
+                var embed = new EmbedBuilder();
+                var currentTime = DateTime.Now.ToLongTimeString();
+                var currentTimeZone = TZNames.GetAbbreviationsForTimeZone(TimeZoneInfo.Local.Id, "en-GB").Standard;
+
                 if (!messageIDs.Any())
                 {
                     try
@@ -42,21 +48,17 @@ namespace Valorant_BOT.Events
                         await client.DeleteMessagesAsync(messages);
                     } catch (NullReferenceException)
                     {
-                        Console.WriteLine("[ERROR] You have invalid guild/channel id in `config.json`");
+                        Console.WriteLine("[ERROR] You have a invalid Guild/Channel ID in 'config.json'.");
                         break;
                     }
 
                     Thread.Sleep(500);
 
-                    currentJson = webClient.DownloadString("https://riotstatus.vercel.app/valorant");
-
-                    var jsonParsed = ValorantEvent.FromJson(currentJson);
-
                     for (int cout = 0; cout < 6; cout++)
                     {
                         Thread.Sleep(850);
 
-                        var embed = new EmbedBuilder
+                        embed = new EmbedBuilder
                         {
                             Title = $"{jsonParsed[0].Regions[cout].Name.ToUpper()} Maintenance Status:",
                             Color = Color.Red
@@ -69,7 +71,7 @@ namespace Valorant_BOT.Events
                                 embed.AddField("Status:", "Scheduled Maintenance", false);
                             }
                             embed.AddField("Description:", jsonParsed[0].Regions[cout].Maintenances[0].Updates[0].Description, false);
-                            embed.WithFooter("Created by Ayresia#2327 | Trexia A1.0");
+                            embed.WithFooter($"Trexia A1.0 | Updated on {currentTime} {currentTimeZone}");
 
                             try
                             {
@@ -78,27 +80,27 @@ namespace Valorant_BOT.Events
                             }
                             catch (NullReferenceException)
                             {
-                                Console.WriteLine("[ERROR] You have invalid channel id in `config.json`");
+                                Console.WriteLine("[ERROR] You have a invalid Channel ID in 'config.json'");
                                 break;
                             }
                         }
                         catch (ArgumentOutOfRangeException)
                         {
-                            var embedS = new EmbedBuilder
+                            embed = new EmbedBuilder
                             {
                                 Title = $"{jsonParsed[0].Regions[cout].Name.ToUpper()} Maintenance Status:",
                                 Color = Color.Green,
                                 Description = "There is no scheduled Maintenance!"
                             };
-                            embedS.WithFooter("Created by Ayresia#2327 | Trexia A1.0");
+                            embed.WithFooter($"Trexia A1.0 | Updated on {currentTime} {currentTimeZone}");
                             try
                             {
-                                var successfulMessage = await client.SendMessageAsync(String.Empty, false, embedS.Build());
+                                var successfulMessage = await client.SendMessageAsync(String.Empty, false, embed.Build());
                                 messageIDs.Add(successfulMessage);
                             }
                             catch (NullReferenceException)
                             {
-                                Console.WriteLine("[ERROR] You have invalid channel id in `config.json`");
+                                Console.WriteLine("[ERROR] You have a invalid Channel ID in 'config.json'");
                                 break;
                             }
                             continue;
@@ -109,53 +111,51 @@ namespace Valorant_BOT.Events
                 {
                     foreach (var message in messageIDs)
                     {
-                        currentJson = webClient.DownloadString("https://riotstatus.vercel.app/valorant");
-
-                        var jsonParsed = ValorantEvent.FromJson(currentJson);
-
-                        var embed = new EmbedBuilder
+                        embed = new EmbedBuilder
                         {
-                            Title = $"{jsonParsed[0].Regions[indexcout].Name.ToUpper()} Maintenance Status:",
-                            Color = Color.Red
+                            Title = $"{jsonParsed[0].Regions[indexCounter].Name.ToUpper()} Maintenance Status:",
+                            Color = Color.Red,
                         };
 
                         try
                         {
-                            if (jsonParsed[0].Regions[indexcout].Maintenances[indexcout].MaintenanceStatus.Equals("scheduled"))
+                            if (jsonParsed[0].Regions[indexCounter].Maintenances[indexCounter].MaintenanceStatus.Equals("scheduled"))
                             {
                                 embed.AddField("Status:", "Scheduled Maintenance", false);
                             }
 
-                            embed.AddField("Description:", jsonParsed[0].Regions[indexcout].Maintenances[0].Updates[0].Description, false);
-                            embed.WithFooter("Created by Ayresia#2327 | Trexia A1.0");
+                            embed.AddField("Description:", jsonParsed[0].Regions[indexCounter].Maintenances[0].Updates[0].Description, false);
+                            embed.WithFooter($"Trexia A1.0 | Updated on {currentTime} {currentTimeZone}");
 
                             await message.ModifyAsync(m =>
                             {
                                 m.Embed = embed.Build();
                             });
-                            indexcout++;
+                            indexCounter++;
                         }
                         catch (ArgumentOutOfRangeException)
                         {
                             var embedS = new EmbedBuilder
                             {
-                                Title = $"{jsonParsed[0].Regions[indexcout].Name.ToUpper()} Maintenance Status:",
+                                Title = $"{jsonParsed[0].Regions[indexCounter].Name.ToUpper()} Maintenance Status:",
                                 Color = Color.Green,
-                                Description = "There is no scheduled Maintenance!"
+                                Description = "There is no scheduled Maintenance!",
                             };
+
                             embedS.WithFooter("Created by Ayresia#2327 | Trexia A1.0");
 
                             await message.ModifyAsync(m =>
                             {
                                 m.Embed = embedS.Build();
                             });
-                            indexcout++;
+
+                            indexCounter++;
                             continue;
                         }
                     }
                 }
 
-                indexcout = 0;
+                indexCounter = 0;
                 Console.WriteLine("[LOG] Added/Updated All Maintenance Status Regions.");
                 Thread.Sleep(900000); // Equivalent to 15 minutes.
             }

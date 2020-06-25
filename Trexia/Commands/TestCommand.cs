@@ -1,17 +1,14 @@
 ﻿using Discord.Commands;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
-namespace Valorant_BOT.Commands
+namespace Trexia.Commands
 {
     public class TestCommand : ModuleBase<SocketCommandContext>
     {
         [Command("test")]
         public async Task TestAsync()
         {
-            await ReplyAsync("Hello World", true);
+            await ReplyAsync("This is a test command.", true);
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿namespace Valorant_BOT
+﻿namespace Trexia
 {
     using System;
     using System.Collections.Generic;
@@ -70,12 +70,12 @@
 
     public partial class ValorantEvent
     {
-        public static List<ValorantEvent> FromJson(string json) => JsonConvert.DeserializeObject<List<ValorantEvent>>(json, Valorant_BOT.Converter.Settings);
+        public static List<ValorantEvent> FromJson(string json) => JsonConvert.DeserializeObject<List<ValorantEvent>>(json, Trexia.Converter.Settings);
     }
 
     public static class Serialize
     {
-        public static string ToJson(this List<ValorantEvent> self) => JsonConvert.SerializeObject(self, Valorant_BOT.Converter.Settings);
+        public static string ToJson(this List<ValorantEvent> self) => JsonConvert.SerializeObject(self, Trexia.Converter.Settings);
     }
 
     internal static class Converter
@@ -121,9 +121,6 @@
             var value = (Description)untypedValue;
             switch (value)
             {
-                case Description.GunSkinDisables:
-                    serializer.Serialize(writer, "Gun Skin Disables");
-                    return;
                 case Description.MaintenanceNotification:
                     serializer.Serialize(writer, "Maintenance Notification");
                     return;

@@ -3,13 +3,12 @@ using Discord.Commands;
 using Discord.WebSocket;
 using System;
 using System.Threading.Tasks;
-using Valorant_BOT.Events;
-using Valorant_BOT.Services;
+using Trexia.Events;
+using Trexia.Services;
 using Microsoft.Extensions.Configuration;
 using System.IO;
-using Trexia;
 
-namespace Valorant_BOT
+namespace Trexia
 {
     class Startup
     {
@@ -29,13 +28,13 @@ namespace Valorant_BOT
 
                 _configuration = _builder.Build();
 
-                Utilities.checkConfig();
+                Utilities.CheckConfig();
                 new Startup().StartupAsync().GetAwaiter().GetResult();
             }
             catch (FileNotFoundException)
             {
-                Utilities.createConfig();
-                Console.WriteLine("[LOG] Created config.json, please relaunch Trexia.");
+                Utilities.CreateConfig();
+                Console.WriteLine("[LOG] Created 'config.json', please relaunch Trexia.");
             }
         }
 
@@ -54,6 +53,7 @@ namespace Valorant_BOT
             await _client.LoginAsync(TokenType.Bot, _configuration["discord_token"]);
             await _client.StartAsync();
             await _client.SetGameAsync("Created by Ayresia#2327", null, ActivityType.Playing);
+
             await Task.Delay(-1);
         }
     }

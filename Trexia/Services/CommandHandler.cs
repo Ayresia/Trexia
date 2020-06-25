@@ -1,11 +1,9 @@
 ﻿using Discord.Commands;
 using Discord.WebSocket;
-using System;
 using System.Reflection;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-namespace Valorant_BOT.Services
+namespace Trexia.Services
 {
     public class CommandHandler
     {

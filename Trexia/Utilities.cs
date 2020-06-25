@@ -1,14 +1,12 @@
 ﻿using System;
 using System.IO;
-using System.Text;
 using Newtonsoft.Json;
-using Valorant_BOT;
 
 namespace Trexia
 {
     class Utilities
     {
-        public static void createConfig()
+        public static void CreateConfig()
         {
             var json = new
             {
@@ -24,26 +22,26 @@ namespace Trexia
             }
         }
 
-        public static void checkConfig()
+        public static void CheckConfig()
         {
             var configuration = Startup._configuration;
 
             if (configuration["discord_token"].Equals("null") || configuration["discord_token"].Length < 1)
             {
-                Console.WriteLine("[LOG] Please put your discord token in `config.json`");
+                Console.WriteLine("[LOG] Please put your Discord Token in 'config.json'.");
                 Environment.Exit(1);
-            } else if (configuration["guild_id"].Equals("null") || configuration["guild_id"].Length < 1 || checkStringAllDigit(configuration["guild_id"]))
+            } else if (configuration["guild_id"].Equals("null") || configuration["guild_id"].Length < 1 || CheckStringIsAllDigit(configuration["guild_id"]))
             {
-                Console.WriteLine("[LOG] Please put your guild id in `config.json`");
+                Console.WriteLine("[LOG] Please put your Guild ID in 'config.json'.");
                 Environment.Exit(1);
-            } else if (configuration["channel_id"].Equals("null") || configuration["channel_id"].Length < 1 || checkStringAllDigit(configuration["channel_id"]))
+            } else if (configuration["channel_id"].Equals("null") || configuration["channel_id"].Length < 1 || CheckStringIsAllDigit(configuration["channel_id"]))
             {
-                Console.WriteLine("[LOG] Please put your channel id in `config.json`");
+                Console.WriteLine("[LOG] Please put your Channel ID in 'config.json'.");
                 Environment.Exit(1);
             }
         }
 
-        public static bool checkStringAllDigit(String input)
+        public static bool CheckStringIsAllDigit(String input)
         {
             foreach (char num in input)
             {
