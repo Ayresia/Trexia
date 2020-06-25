@@ -37,6 +37,7 @@ namespace Trexia.Events
                 currentJson = webClient.DownloadString("https://riotstatus.vercel.app/valorant");
                 var jsonParsed = ValorantEvent.FromJson(currentJson);
                 var embed = new EmbedBuilder();
+
                 var currentTime = DateTime.Now.ToLongTimeString();
                 var currentTimeZone = TZNames.GetAbbreviationsForTimeZone(TimeZoneInfo.Local.Id, "en-GB").Standard;
 
@@ -135,7 +136,7 @@ namespace Trexia.Events
                         }
                         catch (ArgumentOutOfRangeException)
                         {
-                            var embedS = new EmbedBuilder
+                            embed = new EmbedBuilder
                             {
                                 Title = $"{jsonParsed[0].Regions[indexCounter].Name.ToUpper()} Maintenance Status:",
                                 Color = Color.Green,
@@ -146,7 +147,7 @@ namespace Trexia.Events
 
                             await message.ModifyAsync(m =>
                             {
-                                m.Embed = embedS.Build();
+                                m.Embed = embed.Build();
                             });
 
                             indexCounter++;
