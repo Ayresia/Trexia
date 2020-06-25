@@ -8,7 +8,7 @@ namespace Trexia.Commands
         [Command("test")]
         public async Task TestAsync()
         {
-            await ReplyAsync("This is a test command.", true);
+            await ReplyAsync("This is a test command.", false);
         }
     }
 }

@@ -12,10 +12,9 @@ namespace Trexia.Events
             {
                 Console.WriteLine("[ERROR] Your discord token is invalid, please change it from 'config.json'.");
                 Environment.Exit(1);
-            } else
-            {
-                Console.WriteLine($"[LOG] {msg.Message}");
             }
+            
+            Console.WriteLine($"[LOG] {msg.Message}");
 
             return Task.CompletedTask;
         }

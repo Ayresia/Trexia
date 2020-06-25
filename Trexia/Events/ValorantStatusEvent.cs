@@ -21,6 +21,7 @@ namespace Trexia.Events
             ulong channelID = Convert.ToUInt64(Startup._configuration["channel_id"]);
 
             List<RestUserMessage> messageIDs = new List<RestUserMessage>();
+
             try
             {
                 client = _client.GetGuild(guildID).GetTextChannel(channelID);
