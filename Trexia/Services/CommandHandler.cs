@@ -28,11 +28,7 @@ namespace Trexia.Services
             var message = messageParam as SocketUserMessage;
             int argPos = 0;
 
-            if (message == null)
-            {
-                return;
-
-            } else if (!message.HasCharPrefix('!', ref argPos) || message.HasMentionPrefix(_client.CurrentUser, ref argPos) || message.Author.IsBot)
+            if (message == null || !message.HasCharPrefix('!', ref argPos) || message.HasMentionPrefix(_client.CurrentUser, ref argPos) || message.Author.IsBot)
             {
                 return;
             }

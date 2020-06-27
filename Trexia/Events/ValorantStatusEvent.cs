@@ -7,18 +7,20 @@ using System.Linq;
 using Discord.Rest;
 using TimeZoneNames;
 using System.Threading.Tasks;
+using System.Net.Http;
+using Polly;
+using Discord.Net;
 
 namespace Trexia.Events
 {
     class ValorantStatusEvent
     {
-
         public static async Task RemoveAllMessages(DiscordSocketClient _client)
         {
             ulong guildID = ulong.Parse(Startup._configuration["guild_id"]);
             ulong channelID = ulong.Parse(Startup._configuration["channel_id"]);
 
-            if (_client.GetGuild(guildID)?.GetTextChannel(channelID) is { } _socketTextChannel) 
+            if (_client.GetGuild(guildID)?.GetTextChannel(channelID) is { } _socketTextChannel)
             {
                 var messages = await _socketTextChannel.GetMessagesAsync().FlattenAsync();
                 await _socketTextChannel.DeleteMessagesAsync(messages);
@@ -51,7 +53,8 @@ namespace Trexia.Events
 
                 var unsuccessfulEmbed = await _socketTextChannel.SendMessageAsync(String.Empty, false, embedBuilder.Build());
                 messageIDs.Add(unsuccessfulEmbed);
-            } else
+            }
+            else
             {
                 embedBuilder = new EmbedBuilder
                 {
@@ -124,12 +127,18 @@ namespace Trexia.Events
             int indexCounter = 0;
 
             List<RestUserMessage> messageIDs = new List<RestUserMessage>();
-            WebClient webClient = new WebClient();
+            HttpClient httpClient = new HttpClient();
 
             while (true)
             {
-                currentJson = webClient.DownloadString("https://riotstatus.vercel.app/valorant");
-                          
+                Policy
+                    .Handle<HttpException>()
+                    .Retry(3, onRetry: async (exception, retryCount) =>
+                    {
+                        currentJson = await httpClient.GetStringAsync("https://riotstatus.vercel.app/valorant");
+                    });
+
+                currentJson = await httpClient.GetStringAsync("https://riotstatus.vercel.app/valorant");
                 var jsonParsed = ValorantEvent.FromJson(currentJson);
                 var regions = jsonParsed[0].Regions;
 
@@ -164,8 +173,8 @@ namespace Trexia.Events
                         {
                             EditEmbed(false, jsonParsed, indexCounter, message);
                             indexCounter++;
-                        } 
-                        else 
+                        }
+                        else
                         {
                             EditEmbed(true, jsonParsed, indexCounter, message);
                             indexCounter++;

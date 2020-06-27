@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace Trexia.Commands
 {
-    public class TestCommand : ModuleBase<SocketCommandContext>
+    public class Test : ModuleBase<SocketCommandContext>
     {
         [Command("test")]
         public async Task TestAsync()

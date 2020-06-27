@@ -7,7 +7,7 @@ namespace Trexia.Events
     {
         public static Task Event()
         {
-            Thread.Sleep(500);
+            Task.Delay(500);
             ValorantStatusEvent.CheckMaintenance(Startup._client);
 
             return Task.CompletedTask;
