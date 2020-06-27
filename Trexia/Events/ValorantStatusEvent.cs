@@ -1,165 +1,181 @@
-﻿using Discord.WebSocket;
+using Discord.WebSocket;
 using System;
-using System.Threading;
 using System.Net;
 using Discord;
 using System.Collections.Generic;
 using System.Linq;
 using Discord.Rest;
 using TimeZoneNames;
+using System.Threading.Tasks;
 
 namespace Trexia.Events
 {
     class ValorantStatusEvent
     {
-        public static async void CheckMaintenance(DiscordSocketClient _client)
+
+        public static async Task RemoveAllMessages(DiscordSocketClient _client)
         {
-            SocketTextChannel client = null;
-            String currentJson;
-            int indexCounter = 0;
-            ulong guildID = Convert.ToUInt64(Startup._configuration["guild_id"]);
-            ulong channelID = Convert.ToUInt64(Startup._configuration["channel_id"]);
+            ulong guildID = ulong.Parse(Startup._configuration["guild_id"]);
+            ulong channelID = ulong.Parse(Startup._configuration["channel_id"]);
 
-            List<RestUserMessage> messageIDs = new List<RestUserMessage>();
-
-            try
+            if (_client.GetGuild(guildID)?.GetTextChannel(channelID) is { } _socketTextChannel) 
             {
-                client = _client.GetGuild(guildID).GetTextChannel(channelID);
-            } catch (NullReferenceException)
-            {
-                Console.WriteLine("[ERROR] You have a invalid Guild/Channel ID in 'config.json'.");
-                Environment.Exit(1);
+                var messages = await _socketTextChannel.GetMessagesAsync().FlattenAsync();
+                await _socketTextChannel.DeleteMessagesAsync(messages);
             }
 
-            var webClient = new WebClient();
+        }
+
+        public static async void SendEmbed(bool successful, List<ValorantEvent> jsonParsed, int counter, SocketTextChannel _socketTextChannel, DiscordSocketClient _client, List<RestUserMessage> messageIDs)
+        {
+            var currentTime = DateTime.Now.ToLongTimeString();
+            var currentTimeZone = TZNames.GetAbbreviationsForTimeZone(TimeZoneInfo.Local.Id, "en-GB").Standard;
+
+            var embedBuilder = new EmbedBuilder();
+            var region = jsonParsed[0].Regions[counter];
+
+            ulong guildID = ulong.Parse(Startup._configuration["guild_id"]);
+            ulong channelID = ulong.Parse(Startup._configuration["channel_id"]);
+
+            _socketTextChannel = _client.GetGuild(guildID).GetTextChannel(channelID);
+
+            if (successful)
+            {
+                embedBuilder = new EmbedBuilder
+                {
+                    Title = $"{region.Name.ToUpper()} Maintenance Status:",
+                    Color = Color.Green,
+                    Description = "There is no scheduled Maintenance!"
+                };
+                embedBuilder.WithFooter($"Trexia A1.0 | Updated on {currentTime} {currentTimeZone}");
+
+                var unsuccessfulEmbed = await _socketTextChannel.SendMessageAsync(String.Empty, false, embedBuilder.Build());
+                messageIDs.Add(unsuccessfulEmbed);
+            } else
+            {
+                embedBuilder = new EmbedBuilder
+                {
+                    Title = $"{region.Name.ToUpper()} Maintenance Status:",
+                    Color = Color.Red
+                };
+
+                if (region.Maintenances[0].MaintenanceStatus.Equals("scheduled"))
+                {
+                    embedBuilder.AddField("Status:", "Scheduled Maintenance", false);
+                }
+
+                embedBuilder.AddField("Description:", region.Maintenances[0].Updates[0].Description, false);
+                embedBuilder.WithFooter($"Trexia A1.0 | Updated on {currentTime} {currentTimeZone}");
+
+                var unsuccessfulEmbed = await _socketTextChannel.SendMessageAsync(String.Empty, false, embedBuilder.Build());
+                messageIDs.Add(unsuccessfulEmbed);
+            }
+        }
+
+        public static async void EditEmbed(bool successful, List<ValorantEvent> jsonParsed, int counter, RestUserMessage message)
+        {
+            var currentTime = DateTime.Now.ToLongTimeString();
+            var currentTimeZone = TZNames.GetAbbreviationsForTimeZone(TimeZoneInfo.Local.Id, "en-GB").Standard;
+            var region = jsonParsed[0].Regions[counter];
+            var embedBuilder = new EmbedBuilder();
+
+            if (successful)
+            {
+                embedBuilder = new EmbedBuilder
+                {
+                    Title = $"{jsonParsed[0].Regions[counter].Name.ToUpper()} Maintenance Status:",
+                    Color = Color.Green,
+                    Description = "There is no scheduled Maintenance!"
+                };
+                embedBuilder.WithFooter($"Trexia A1.0 | Updated on {currentTime} {currentTimeZone}");
+
+                await message.ModifyAsync(m =>
+                {
+                    m.Embed = embedBuilder.Build();
+                });
+            }
+            else
+            {
+                embedBuilder = new EmbedBuilder
+                {
+                    Title = $"{region.Name.ToUpper()} Maintenance Status:",
+                    Color = Color.Red
+                };
+
+                if (region.Maintenances[0].MaintenanceStatus.Equals("scheduled"))
+                {
+                    embedBuilder.AddField("Status:", "Scheduled Maintenance", false);
+                }
+
+                embedBuilder.AddField("Description:", jsonParsed[0].Regions[counter].Maintenances[0].Updates[0].Description, false);
+                embedBuilder.WithFooter($"Trexia A1.0 | Updated on {currentTime} {currentTimeZone}");
+
+                await message.ModifyAsync(m =>
+                {
+                    m.Embed = embedBuilder.Build();
+                });
+            }
+        }
+
+        public static async void CheckMaintenance(DiscordSocketClient _client)
+        {
+            SocketTextChannel _socketTextChannel = null;
+            String currentJson;
+            int indexCounter = 0;
+
+            List<RestUserMessage> messageIDs = new List<RestUserMessage>();
+            WebClient webClient = new WebClient();
 
             while (true)
             {
                 currentJson = webClient.DownloadString("https://riotstatus.vercel.app/valorant");
+                          
                 var jsonParsed = ValorantEvent.FromJson(currentJson);
-                var embed = new EmbedBuilder();
-
-                var currentTime = DateTime.Now.ToLongTimeString();
-                var currentTimeZone = TZNames.GetAbbreviationsForTimeZone(TimeZoneInfo.Local.Id, "en-GB").Standard;
+                var regions = jsonParsed[0].Regions;
 
                 if (!messageIDs.Any())
                 {
-                    try
-                    {
-                        var messages = await client.GetMessagesAsync().FlattenAsync();
-                        await client.DeleteMessagesAsync(messages);
-                    } catch (NullReferenceException)
-                    {
-                        Console.WriteLine("[ERROR] You have a invalid Guild/Channel ID in 'config.json'.");
-                        break;
-                    }
+                    await RemoveAllMessages(_client);
+                    await Task.Delay(650);
 
-                    Thread.Sleep(500);
-
-                    for (int cout = 0; cout < 6; cout++)
+                    foreach (var region in regions)
                     {
-                        Thread.Sleep(850);
+                        await Task.Delay(1000);
 
-                        embed = new EmbedBuilder
+                        if (region.Maintenances.Count != 0)
                         {
-                            Title = $"{jsonParsed[0].Regions[cout].Name.ToUpper()} Maintenance Status:",
-                            Color = Color.Red
-                        };
-
-                        try
-                        {
-                            if (jsonParsed[0].Regions[cout].Maintenances[0].MaintenanceStatus.Equals("scheduled"))
-                            {
-                                embed.AddField("Status:", "Scheduled Maintenance", false);
-                            }
-                            embed.AddField("Description:", jsonParsed[0].Regions[cout].Maintenances[0].Updates[0].Description, false);
-                            embed.WithFooter($"Trexia A1.0 | Updated on {currentTime} {currentTimeZone}");
-
-                            try
-                            {
-                                var unsuccessfulMessage = await client.SendMessageAsync(String.Empty, false, embed.Build());
-                                messageIDs.Add(unsuccessfulMessage);
-                            }
-                            catch (NullReferenceException)
-                            {
-                                Console.WriteLine("[ERROR] You have a invalid Channel ID in 'config.json'");
-                                break;
-                            }
+                            SendEmbed(false, jsonParsed, indexCounter, _socketTextChannel, _client, messageIDs);
                         }
-                        catch (ArgumentOutOfRangeException)
+                        else
                         {
-                            embed = new EmbedBuilder
-                            {
-                                Title = $"{jsonParsed[0].Regions[cout].Name.ToUpper()} Maintenance Status:",
-                                Color = Color.Green,
-                                Description = "There is no scheduled Maintenance!"
-                            };
-                            embed.WithFooter($"Trexia A1.0 | Updated on {currentTime} {currentTimeZone}");
-                            try
-                            {
-                                var successfulMessage = await client.SendMessageAsync(String.Empty, false, embed.Build());
-                                messageIDs.Add(successfulMessage);
-                            }
-                            catch (NullReferenceException)
-                            {
-                                Console.WriteLine("[ERROR] You have a invalid Channel ID in 'config.json'");
-                                break;
-                            }
-                            continue;
+                            SendEmbed(true, jsonParsed, indexCounter, _socketTextChannel, _client, messageIDs);
                         }
+
+                        indexCounter++;
                     }
                 }
                 else
                 {
                     foreach (var message in messageIDs)
                     {
-                        embed = new EmbedBuilder
+                        await Task.Delay(1000);
+
+                        if (regions[indexCounter].Maintenances.Count != 0)
                         {
-                            Title = $"{jsonParsed[0].Regions[indexCounter].Name.ToUpper()} Maintenance Status:",
-                            Color = Color.Red,
-                        };
-
-                        try
-                        {
-                            if (jsonParsed[0].Regions[indexCounter].Maintenances[indexCounter].MaintenanceStatus.Equals("scheduled"))
-                            {
-                                embed.AddField("Status:", "Scheduled Maintenance", false);
-                            }
-
-                            embed.AddField("Description:", jsonParsed[0].Regions[indexCounter].Maintenances[0].Updates[0].Description, false);
-                            embed.WithFooter($"Trexia A1.0 | Updated on {currentTime} {currentTimeZone}");
-
-                            await message.ModifyAsync(m =>
-                            {
-                                m.Embed = embed.Build();
-                            });
+                            EditEmbed(false, jsonParsed, indexCounter, message);
                             indexCounter++;
-                        }
-                        catch (ArgumentOutOfRangeException)
+                        } 
+                        else 
                         {
-                            embed = new EmbedBuilder
-                            {
-                                Title = $"{jsonParsed[0].Regions[indexCounter].Name.ToUpper()} Maintenance Status:",
-                                Color = Color.Green,
-                                Description = "There is no scheduled Maintenance!",
-                            };
-
-                            embed.WithFooter($"Trexia A1.0 | Updated on {currentTime} {currentTimeZone}");
-
-                            await message.ModifyAsync(m =>
-                            {
-                                m.Embed = embed.Build();
-                            });
-
+                            EditEmbed(true, jsonParsed, indexCounter, message);
                             indexCounter++;
-                            continue;
                         }
                     }
                 }
 
-                indexCounter = 0;
                 Console.WriteLine("[LOG] Added/Updated All Maintenance Status Regions.");
-                Thread.Sleep(900000); // Equivalent to 15 minutes.
+                indexCounter = 0;
+                await Task.Delay(900000);
             }
         }
     }
