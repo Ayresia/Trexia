@@ -5,6 +5,7 @@ A Discord Bot that is based on Valorant. Developed with Discord.net (C#)
 - Shows Server Maintanence Status (Each Region).
 - Configuration File Support
 - User Friendly
+- Cooldown Commands
 
 ## Got any Suggestions/Requests?
 Direct message me on discord **Ayresia#2327**
