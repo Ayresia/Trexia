@@ -50,7 +50,7 @@ namespace Trexia.Services
             }
 
             var result = await _commands.ExecuteAsync(context: context, argPos: argPos, services: null);
-            currentCooldownUsers[userID] = dateTime.AddSeconds(5);
+            currentCooldownUsers[userID] = DateTime.Now.AddSeconds(5);
         }
     }
 }
