@@ -48,10 +48,6 @@ namespace Trexia.Services
                 await context.Channel.SendMessageAsync($"You have a cooldown, you have {currentCooldownUsers[userID].Second - dateTime.Second}s left.");
                 return;
             }
-            else if (!contains)
-            {
-                currentCooldownUsers.Add(userID, dateTime.AddSeconds(5));
-            }
 
             var result = await _commands.ExecuteAsync(context: context, argPos: argPos, services: null);
             currentCooldownUsers[userID] = dateTime.AddSeconds(5);
