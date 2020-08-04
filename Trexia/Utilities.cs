@@ -45,13 +45,13 @@ namespace Trexia
         {
             foreach (char num in input)
             {
-                if (num !< '0' || num !> '9')
+                if (num < '0' || num > '9')
                 {
-                    return true;
+                    return false;
                 }
             }
 
-            return false;
+            return true;
         }
     }
 }
